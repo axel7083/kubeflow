@@ -11,6 +11,7 @@ declare namespace User {
     email: string;
     username: string;
     domain: string;
+    groups: string[];
     hasAuth: boolean;
     auth?: AuthObject;
   }

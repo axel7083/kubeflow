@@ -34,6 +34,7 @@ interface EnvironmentInfo {
     namespaces: SimpleBinding[];
     platform: PlatformInfo;
     user: string;
+    groups: string[];
     isClusterAdmin: boolean;
 }
 
@@ -119,7 +120,8 @@ export class WorkgroupApi {
         private profilesService: DefaultApi,
         private k8sService: KubernetesService,
         private registrationFlowAllowed: boolean,
-        private userIdHeader: string) {}
+        private userIdHeader: string,
+        private groupsHeader: string) {}
     /** Retrieves and memoizes the PlatformInfo. */
     private async getPlatformInfo(): Promise<PlatformInfo> {
         if (!this.platformInfo) {
@@ -138,7 +140,7 @@ export class WorkgroupApi {
                 user,
             ),
         ]);
-        return {user: user.email, platform, namespaces, isClusterAdmin};
+        return {user: user.email, groups: user.groups, platform, namespaces, isClusterAdmin};
     }
 
     /**
@@ -151,6 +153,7 @@ export class WorkgroupApi {
         ]);
         return {
             user: user.email,
+            groups: user.groups,
             platform,
             namespaces,
             isClusterAdmin: true,
@@ -177,7 +180,7 @@ export class WorkgroupApi {
     async getWorkgroupInfo(user: User.User): Promise<WorkgroupInfo> {
         const [adminResponse, bindings] = await Promise.all([
             this.profilesService.v1RoleClusteradminGet(user.email),
-            this.profilesService.readBindings(user.email),
+            this.profilesService.readBindings(user.email, user.groups),
         ]);
         const namespaces = mapWorkgroupBindingToSimpleBinding(
             bindings.body.bindings || []
@@ -216,7 +219,7 @@ export class WorkgroupApi {
                 role: 'contributor',
             });
             // only pass the auth-related headers from the user's request on to kfam
-            const authHeaders = ['authorization', 'cookie', this.userIdHeader];
+            const authHeaders = ['authorization', 'cookie', this.userIdHeader, this.groupsHeader];
             const {headers} = req;
             Object.keys(headers).forEach(
                 (key) => authHeaders.includes(key) || delete headers[key]
@@ -244,7 +247,7 @@ export class WorkgroupApi {
      */
     async getContributors(namespace: string) {
         const {body} = await this.profilesService
-            .readBindings(undefined, namespace);
+            .readBindings(undefined, undefined, namespace);
         const users = mapWorkgroupBindingToSimpleBinding(body.bindings)
             .filter((b) => b.role === 'contributor')
             .map((b) => b.user);

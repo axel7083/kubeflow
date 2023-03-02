@@ -711,7 +711,7 @@ export class DefaultApi {
      * @param role Owner or editor or viewer, when not empty, only return bindings of this role
      * @param {*} [options] Override http request options.
      */
-    public readBindings (user?: string, namespace?: string, role?: string, options: any = {}) : Promise<{ response: http.IncomingMessage; body: BindingEntries;  }> {
+    public readBindings (user?: string, groups?: string[], namespace?: string, role?: string, options: any = {}) : Promise<{ response: http.IncomingMessage; body: BindingEntries;  }> {
         const localVarPath = this.basePath + '/v1/bindings';
         let localVarQueryParameters: any = {};
         let localVarHeaderParams: any = (<any>Object).assign({}, this.defaultHeaders);
@@ -719,6 +719,10 @@ export class DefaultApi {
 
         if (user !== undefined) {
             localVarQueryParameters['user'] = ObjectSerializer.serialize(user, "string");
+        }
+
+        if(groups !== undefined) {
+            localVarQueryParameters['groups'] = ObjectSerializer.serialize(groups.join(","), "string");
         }
 
         if (namespace !== undefined) {

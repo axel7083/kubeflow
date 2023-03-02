@@ -5,7 +5,7 @@ import {NextFunction, Request, RequestHandler, Response} from 'express';
  * a User object with the requesting user's identity.
  */
 export function attachUser(
-    userIdHeader: string, userIdPrefix: string): RequestHandler {
+    userIdHeader: string, userIdPrefix: string, groupsHeader: string): RequestHandler {
   return (req: Request, _: Response, next: NextFunction) => {
     let email = 'anonymous@kubeflow.org';
     let auth: User.AuthObject;
@@ -13,8 +13,14 @@ export function attachUser(
       email = req.header(userIdHeader).slice(userIdPrefix.length);
       auth = {[userIdHeader]: req.header(userIdHeader)};
     }
+    let groups: string[] = [];
+    if(groupsHeader && req.header(groupsHeader)) {
+      groups = req.header(groupsHeader).split(",");
+      auth = {[groupsHeader]: req.header(groupsHeader)};
+    }
     req.user = {
       email,
+      groups,
       username: email.split('@')[0],
       domain: email.split('@')[1],
       hasAuth: auth !== undefined,

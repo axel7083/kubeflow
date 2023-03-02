@@ -28,6 +28,7 @@ const {
   PROFILES_KFAM_SERVICE_PORT = '8081',
   USERID_HEADER = 'X-Goog-Authenticated-User-Email',
   USERID_PREFIX = 'accounts.google.com:',
+  GROUPS_HEADER = '',
   REGISTRATION_FLOW = "true",
 } = process.env;
 
@@ -47,7 +48,7 @@ async function main() {
 
   app.use(express.json());
   app.use(express.static(frontEnd));
-  app.use(attachUser(USERID_HEADER, USERID_PREFIX));
+  app.use(attachUser(USERID_HEADER, USERID_PREFIX, GROUPS_HEADER));
   app.get('/debug', (req: Request, res: Response) => {
     res.json({
       user: req.user,
@@ -57,6 +58,7 @@ async function main() {
       headersForIdentity: {
         USERID_HEADER,
         USERID_PREFIX,
+        GROUPS_HEADER,
       },
     });
   });
@@ -67,7 +69,7 @@ async function main() {
     });
   });
   app.use('/api', new Api(k8sService, metricsService).routes());
-  app.use('/api/workgroup', new WorkgroupApi(profilesService, k8sService, registrationFlowAllowed, USERID_HEADER).routes());
+  app.use('/api/workgroup', new WorkgroupApi(profilesService, k8sService, registrationFlowAllowed, USERID_HEADER, GROUPS_HEADER).routes());
   app.use('/api', (req: Request, res: Response) =>
     apiError({
       res,
