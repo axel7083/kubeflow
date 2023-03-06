@@ -68,6 +68,16 @@ export class ManageUsersView extends utilitiesMixin(PolymerElement) {
         return arr;
     }
     /**
+     * Returns a row per group having access to the namespace
+     * @param {[object]} groups Groups array.
+     * @return {[string,string][]} rows for groups/roles table.
+     */
+    groupsBreakdown(groups) {
+        return groups.map((group) => {
+            return [group.name, group.role];
+        });
+    }
+    /**
      * Triggers an API call to create a new Contributor
      */
     addNewContrib() {

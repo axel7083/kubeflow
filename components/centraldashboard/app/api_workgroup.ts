@@ -52,6 +52,7 @@ export interface SimpleBinding {
     namespace: string;
     role: SimpleRole;
     user: string;
+    isGroup: boolean;
 }
 
 export interface WorkgroupInfo {
@@ -67,6 +68,7 @@ export function mapWorkgroupBindingToSimpleBinding (bindings: WorkgroupBinding[]
         user: n.user.name,
         namespace: n.referredNamespace,
         role: roleMap.get(n.roleRef.name as Role) as SimpleRole,
+        isGroup: n.user.kind === 'Group',
     }));
 }
 
@@ -79,6 +81,7 @@ export function mapNamespacesToSimpleBinding (user: string, namespaces: V1Namesp
         user,
         namespace: n.metadata.name,
         role: 'contributor',
+        isGroup: n.kind === 'Group',
     }));
 }
 
@@ -172,6 +175,7 @@ export class WorkgroupApi {
             namespace: n,
             role: 'contributor',
             user: fakeUser,
+            isGroup: false,
         }));
     }
     /**
@@ -217,6 +221,7 @@ export class WorkgroupApi {
                 user: contributor,
                 namespace,
                 role: 'contributor',
+                isGroup: false,
             });
             // only pass the auth-related headers from the user's request on to kfam
             const authHeaders = ['authorization', 'cookie', this.userIdHeader, this.groupsHeader];
@@ -249,10 +254,24 @@ export class WorkgroupApi {
         const {body} = await this.profilesService
             .readBindings(undefined, undefined, namespace);
         const users = mapWorkgroupBindingToSimpleBinding(body.bindings)
-            .filter((b) => b.role === 'contributor')
+            .filter((b) => !b.isGroup && b.role === 'contributor')
             .map((b) => b.user);
         return users;
     }
+
+    async getGroups(namespace: string) {
+        const {body} = await this.profilesService
+            .readBindings(undefined, undefined, namespace);
+        return mapWorkgroupBindingToSimpleBinding(body.bindings)
+            .filter((b) => b.isGroup)
+            .map((b) => {
+                return {
+                    'name': b.user,
+                    'role': b.role,
+                };
+            });
+    }
+
     routes() {return Router()
         .get('/exists', async (req: Request, res: Response) => {
             try {
@@ -381,6 +400,19 @@ export class WorkgroupApi {
                 surfaceProfileControllerErrors({
                     res,
                     msg: `Unable to fetch contributors for ${namespace}`,
+                    err,
+                });
+            }
+        })
+        .get('/get-groups/:namespace', async (req: Request, res: Response) => {
+            const {namespace} = req.params;
+            try {
+                const groups = await this.getGroups(namespace);
+                res.json(groups);
+            } catch (err) {
+                surfaceProfileControllerErrors({
+                    res,
+                    msg: `Unable to fetch groups for ${namespace}`,
                     err,
                 });
             }
