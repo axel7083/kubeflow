@@ -16,18 +16,11 @@ export class UsedByComponent implements TableColumnComponent, OnInit {
     return this.data;
   }
 
+  get joined() {
+    return this.data.keys.join(', ');
+  }
+
   constructor() {}
 
   ngOnInit(): void {}
-
-  get pvcName() {
-    return this.element.name;
-  }
-
-  getUrlItem(nb: string, element: any) {
-    return {
-      name: nb,
-      url: `/jupyter/notebook/details/${element.namespace}/${nb}`,
-    };
-  }
 }

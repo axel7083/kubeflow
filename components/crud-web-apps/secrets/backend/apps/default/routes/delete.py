@@ -13,7 +13,7 @@ def delete_pvc(secret, namespace):
     # TODO: check for pod / pipelines using the secrets
 
     log.info("Deleting Secret %s/%s...", namespace, secret)
-    api.delete_secret(secret, namespace)
+    api.delete_secret(namespace=namespace, name=secret)
     log.info("Successfully deleted Secret %s/%s", namespace, secret)
 
     return api.success_response("message",

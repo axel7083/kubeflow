@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
+import { MatExpansionModule } from '@angular/material/expansion';
 import { ErrorStateMatcher } from '@angular/material/core';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -20,7 +20,6 @@ import { FormDefaultComponent } from './pages/form/form-default/form-default.com
 import { IndexDefaultComponent } from './pages/index/index-default/index-default.component';
 
 import { HttpClientModule, HttpClient } from '@angular/common/http';
-import { VolumeDetailsPageModule } from './pages/volume-details-page/volume-details-page.module';
 import { ColumnsModule } from './pages/index/columns/columns.module';
 import {
   MatSnackBarConfig,
@@ -48,8 +47,8 @@ const VwaSnackBarConfig: MatSnackBarConfig = {
     FormModule,
     KubeflowModule,
     HttpClientModule,
-    VolumeDetailsPageModule,
     ColumnsModule,
+    MatExpansionModule,
   ],
   providers: [
     { provide: ErrorStateMatcher, useClass: ImmediateErrorStateMatcher },

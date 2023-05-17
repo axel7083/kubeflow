@@ -25,7 +25,7 @@ Cypress.Commands.add('mockDefaultStorageClassRequest', defaultStorageClass => {
 });
 
 Cypress.Commands.add('mockEmptyPVCsRequest', namespace => {
-  cy.intercept('GET', `/api/namespaces/${namespace}/pvcs`, {
+  cy.intercept('GET', `/api/namespaces/${namespace}/secrets`, {
     pvcs: [],
   }).as('mockEmptyPVCsRequest');
 });

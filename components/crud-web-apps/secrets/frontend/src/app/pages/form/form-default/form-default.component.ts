@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
+  FormArray,
   Validators,
   FormControl,
   ValidatorFn,
@@ -15,7 +16,7 @@ import {
   DIALOG_RESP,
 } from 'kubeflow';
 import { VWABackendService } from 'src/app/services/backend.service';
-import { PVCPostObject } from 'src/app/types';
+import {PVCPostObject, KubernetesTypeData, SecretPostObject} from 'src/app/types';
 import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
@@ -24,6 +25,8 @@ import { MatDialogRef } from '@angular/material/dialog';
   styleUrls: ['./form-default.component.scss'],
 })
 export class FormDefaultComponent implements OnInit, OnDestroy {
+  openPanel = new Set();
+
   public TYPE_EMPTY = 'empty';
 
   public subs = new Subscription();
@@ -31,9 +34,12 @@ export class FormDefaultComponent implements OnInit, OnDestroy {
   public blockSubmit = false;
 
   public currNamespace = '';
-  public pvcNames = new Set<string>();
-  public storageClasses: string[] = [];
-  public defaultStorageClass: string;
+  public existingSecretsNames = new Set<string>();
+  public secretTypes: string[] = Object.keys(KubernetesTypeData);
+
+  get fieldsArray(): FormArray {
+    return this.formCtrl.get('secretData') as FormArray
+  }
 
   constructor(
     public ns: NamespaceService,
@@ -42,40 +48,50 @@ export class FormDefaultComponent implements OnInit, OnDestroy {
     public dialog: MatDialogRef<FormDefaultComponent>,
   ) {
     this.formCtrl = this.fb.group({
-      type: ['empty', [Validators.required]],
       name: ['', [Validators.required]],
       namespace: ['', [Validators.required]],
-      size: [10, []],
-      class: ['$empty', [Validators.required]],
-      mode: ['ReadWriteOnce', [Validators.required]],
+      secretType: ['Opaque', [Validators.required]],
+      secretData: new FormArray([]),
     });
   }
 
   ngOnInit() {
     this.formCtrl.controls.namespace.disable();
 
-    this.backend.getStorageClasses().subscribe(storageClasses => {
-      this.storageClasses = storageClasses;
-
-      // Once we have the list of storage classes, get the
-      // default one from the backend and make it the preselected
-      this.backend.getDefaultStorageClass().subscribe(defaultClass => {
-        this.defaultStorageClass = defaultClass;
-        this.formCtrl.controls.class.setValue(defaultClass);
-      });
-    });
-
     this.subs.add(
       this.ns.getSelectedNamespace().subscribe(ns => {
         this.currNamespace = ns;
         this.formCtrl.controls.namespace.setValue(ns);
 
-        this.backend.getPVCs(ns).subscribe(pvcs => {
-          this.pvcNames.clear();
-          pvcs.forEach(pvc => this.pvcNames.add(pvc.name));
+        this.backend.getSecrets(ns).subscribe(pvcs => {
+          this.existingSecretsNames.clear();
+          pvcs.forEach(pvc => this.existingSecretsNames.add(pvc.name));
         });
       }),
     );
+
+    this.formCtrl.get('secretType').valueChanges.subscribe((value: string) => {
+      // Callback logic when the "type" field changes
+      this.typeFieldChanged(value);
+    });
+  }
+
+  typeFieldChanged(value: string) {
+    if (!(value in KubernetesTypeData)) {
+      console.warn("Something went wrong. typeFieldChanged received " + value)
+    }
+
+    this.fieldsArray.clear();
+
+
+    if(value !== "Opaque") {
+      this.fieldsArray.setValue(KubernetesTypeData[value].map((key) => {
+        return new FormGroup({
+          key: new FormControl(key, Validators.required),
+          data: new FormControl('', Validators.required),
+        });
+      }))
+    }
   }
 
   ngOnDestroy() {
@@ -83,11 +99,11 @@ export class FormDefaultComponent implements OnInit, OnDestroy {
   }
 
   public onSubmit() {
-    const pvc: PVCPostObject = JSON.parse(JSON.stringify(this.formCtrl.value));
-    pvc.size = pvc.size + 'Gi';
-    this.blockSubmit = true;
+    const secret: SecretPostObject = JSON.parse(JSON.stringify(this.formCtrl.value));
+    console.log("secrets", secret);
 
-    this.backend.createPVC(this.currNamespace, pvc).subscribe(
+    this.blockSubmit = true;
+    this.backend.createSecret(this.currNamespace, secret).subscribe(
       result => {
         this.dialog.close(DIALOG_RESP.ACCEPT);
       },
@@ -97,7 +113,34 @@ export class FormDefaultComponent implements OnInit, OnDestroy {
     );
   }
 
+  public addNewSecretField() {
+    this.fieldsArray.push(
+      this.createNewSecretField()
+    )
+  }
+
+  onDelete(id: number, event: PointerEvent) {
+    event.stopPropagation();
+    this.fieldsArray.removeAt(id);
+    this.openPanel.clear();
+  }
+
+  private createNewSecretField(): FormGroup {
+    return new FormGroup({
+      key: new FormControl('', Validators.required),
+      data: new FormControl('', Validators.required),
+    });
+  }
+
   public onCancel() {
     this.dialog.close(DIALOG_RESP.CANCEL);
+  }
+
+  public isOpaque() {
+    return this.formCtrl.get('secretType').value === "Opaque";
+  }
+
+  public getFieldName(group: FormGroup) {
+      return group.get('key').value || "Secret field"
   }
 }

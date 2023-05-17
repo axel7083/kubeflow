@@ -13,22 +13,10 @@ import { UsedByComponent } from './columns/used-by/used-by.component';
 export const tableConfig: TableConfig = {
   columns: [
     {
-      matHeaderCellDef: $localize`Status`,
-      matColumnDef: 'status',
-      style: { width: '1%' },
-      value: new StatusValue(),
-      sort: true,
-    },
-    {
       matHeaderCellDef: $localize`Name`,
       matColumnDef: 'name',
       style: { width: '25%' },
-      value: new LinkValue({
-        field: 'link',
-        popoverField: 'name',
-        truncate: true,
-        linkType: LinkType.Internal,
-      }),
+      value: new PropertyValue({ field: 'name' }),
       sort: true,
     },
     {
@@ -42,38 +30,22 @@ export const tableConfig: TableConfig = {
       sort: true,
     },
     {
-      matHeaderCellDef: $localize`Size`,
-      matColumnDef: 'size',
-      textAlignment: 'right',
-      style: { width: '10%' },
-      value: new PropertyValue({ field: 'capacity', truncate: true }),
-      sort: true,
-      sortingPreprocessorFn: quantityToScalar,
-    },
-    {
-      matHeaderCellDef: $localize`Access Mode`,
-      matColumnDef: 'modes',
+      matHeaderCellDef: $localize`Keys`,
+      matColumnDef: 'keys',
       style: { width: '15%' },
-      value: new PropertyValue({ field: 'modes', truncate: true }),
-      sort: true,
-    },
-    {
-      matHeaderCellDef: $localize`Storage Class`,
-      matColumnDef: 'class',
-      style: { width: '10%' },
-      value: new PropertyValue({ field: 'class', truncate: true }),
-      sort: true,
-    },
-    {
-      matHeaderCellDef: $localize`Used by`,
-      matColumnDef: 'usedBy',
-      style: { 'max-width': '60px' },
       value: new ComponentValue({
         component: UsedByComponent,
       }),
       sort: true,
-      sortingPreprocessorFn: element => element.notebooks,
-      filteringPreprocessorFn: element => element.notebooks,
+      sortingPreprocessorFn: element => element.keys,
+      filteringPreprocessorFn: element => element.keys,
+    },
+    {
+      matHeaderCellDef: $localize`Type`,
+      matColumnDef: 'type',
+      style: { 'max-width': '60px' },
+      value: new PropertyValue({ field: 'type' }),
+      sort: true,
     },
 
     // the apps should import the actions they want

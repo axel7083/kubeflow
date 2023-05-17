@@ -39,7 +39,7 @@ export class IndexDefaultComponent implements OnInit, OnDestroy {
   public dashboardDisconnectedState = DashboardState.Disconnected;
 
   private newVolumeButton = new ToolbarButton({
-    text: $localize`New Volume`,
+    text: $localize`New Secret`,
     icon: 'add',
     stroked: true,
     fn: () => {
@@ -78,7 +78,7 @@ export class IndexDefaultComponent implements OnInit, OnDestroy {
     this.pollSub.unsubscribe();
     this.processedData = [];
 
-    const request = this.backend.getPVCs(ns);
+    const request = this.backend.getSecrets(ns);
 
     this.pollSub = this.poller.exponential(request).subscribe(pvcs => {
       this.processedData = this.parseIncomingData(pvcs);
@@ -89,20 +89,6 @@ export class IndexDefaultComponent implements OnInit, OnDestroy {
     switch (a.action) {
       case 'delete':
         this.deleteVolumeClicked(a.data);
-        break;
-      case 'name:link':
-        if (a.data.status.phase === STATUS_TYPE.TERMINATING) {
-          a.event.stopPropagation();
-          a.event.preventDefault();
-          const config: SnackBarConfig = {
-            data: {
-              msg: 'PVC is unavailable now.',
-              snackType: SnackType.Warning,
-            },
-          };
-          this.snackBar.open(config);
-          return;
-        }
         break;
     }
   }
@@ -147,31 +133,19 @@ export class IndexDefaultComponent implements OnInit, OnDestroy {
     const pvcsCopy = JSON.parse(JSON.stringify(pvcs)) as PVCProcessedObject[];
 
     for (const pvc of pvcsCopy) {
-      pvc.deleteAction = this.parseDeletionActionStatus(pvc);
+      pvc.deleteAction = this.parseDeletionActionStatus();
       pvc.ageValue = pvc.age.uptime;
       pvc.ageTooltip = pvc.age.timestamp;
-      pvc.link = {
-        text: pvc.name,
-        url: `/volume/details/${pvc.namespace}/${pvc.name}`,
-      };
     }
 
     return pvcsCopy;
   }
 
-  public parseDeletionActionStatus(pvc: PVCProcessedObject) {
-    if (pvc.notebooks.length) {
-      return STATUS_TYPE.UNAVAILABLE;
-    }
-
-    if (pvc.status.phase !== STATUS_TYPE.TERMINATING) {
-      return STATUS_TYPE.READY;
-    }
-
-    return STATUS_TYPE.TERMINATING;
+  public parseDeletionActionStatus() {
+    return STATUS_TYPE.READY;
   }
 
   public pvcTrackByFn(index: number, pvc: PVCProcessedObject) {
-    return `${pvc.name}/${pvc.namespace}/${pvc.capacity}`;
+    return `${pvc.name}/${pvc.namespace}/${pvc.type}`;
   }
 }

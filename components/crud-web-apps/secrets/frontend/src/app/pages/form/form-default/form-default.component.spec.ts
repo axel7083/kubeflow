@@ -10,8 +10,8 @@ import { FormDefaultComponent } from './form-default.component';
 const VWABackendServiceStub: Partial<VWABackendService> = {
   getStorageClasses: () => of(),
   getDefaultStorageClass: () => of(),
-  getPVCs: () => of(),
-  createPVC: () => of(),
+  getSecrets: () => of(),
+  createSecret: () => of(),
 };
 const FormBuilderStub: Partial<FormBuilder> = {
   group: () => mockFormGroup,

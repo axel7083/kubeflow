@@ -15,7 +15,7 @@ import { VWABackendService } from 'src/app/services/backend.service';
 import { IndexDefaultComponent } from './index-default.component';
 
 const VWABackendServiceStub: Partial<VWABackendService> = {
-  getPVCs: () => of(),
+  getSecrets: () => of(),
 };
 const SnackBarServiceStub: Partial<SnackBarService> = {
   open: () => {},

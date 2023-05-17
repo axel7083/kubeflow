@@ -3,9 +3,8 @@ import { BackendService, SnackBarService } from 'kubeflow';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { PVCResponseObject, VWABackendResponse, PVCPostObject } from '../types';
+import {PVCResponseObject, VWABackendResponse, PVCPostObject, SecretPostObject} from '../types';
 import { V1PersistentVolumeClaim, V1Pod } from '@kubernetes/client-node';
-import { EventObject } from '../types/event';
 
 @Injectable({
   providedIn: 'root',
@@ -15,14 +14,14 @@ export class VWABackendService extends BackendService {
     super(http, snackBar);
   }
 
-  private getNamespacedPVCs(
+  private getNamespacedSecrets(
     namespace: string,
   ): Observable<PVCResponseObject[]> {
-    const url = `api/namespaces/${namespace}/pvcs`;
+    const url = `api/namespaces/${namespace}/secrets`;
 
     return this.http.get<VWABackendResponse>(url).pipe(
       catchError(error => this.handleError(error)),
-      map((resp: VWABackendResponse) => resp.pvcs),
+      map((resp: VWABackendResponse) => resp.secrets),
     );
   }
 
@@ -30,42 +29,20 @@ export class VWABackendService extends BackendService {
     namespaces: string[],
   ): Observable<PVCResponseObject[]> {
     return this.getObjectsAllNamespaces(
-      this.getNamespacedPVCs.bind(this),
+      this.getNamespacedSecrets.bind(this),
       namespaces,
     );
   }
 
-  public getPVCs(ns: string | string[]): Observable<PVCResponseObject[]> {
+  public getSecrets(ns: string | string[]): Observable<PVCResponseObject[]> {
     if (!Array.isArray(ns)) {
-      return this.getNamespacedPVCs(ns);
+      return this.getNamespacedSecrets(ns);
     }
 
     return this.getPVCsAllNamespaces(ns);
   }
 
-  public getPVC(
-    namespace: string,
-    pvcName: string,
-  ): Observable<V1PersistentVolumeClaim> {
-    const url = `api/namespaces/${namespace}/pvcs/${pvcName}`;
-
-    return this.http.get<VWABackendResponse>(url).pipe(
-      catchError(error => this.handleError(error)),
-      map((resp: VWABackendResponse) => resp.pvc),
-    );
-  }
-
-  public getPVCEvents(pvc: V1PersistentVolumeClaim): Observable<EventObject[]> {
-    const namespace = pvc.metadata.namespace;
-    const pvcName = pvc.metadata.name;
-    const url = `api/namespaces/${namespace}/pvcs/${pvcName}/events`;
-
-    return this.http.get<VWABackendResponse>(url).pipe(
-      catchError(error => this.handleError(error)),
-      map((resp: VWABackendResponse) => resp.events),
-    );
-  }
-
+  // TODO: to update later
   public getPodsUsingPVC(pvc: V1PersistentVolumeClaim): Observable<V1Pod[]> {
     const namespace = pvc.metadata.namespace;
     const pvcName = pvc.metadata.name;
@@ -77,26 +54,17 @@ export class VWABackendService extends BackendService {
     );
   }
 
-  // POST
-  public createViewer(namespace: string, viewer: string) {
-    const url = `api/namespaces/${namespace}/viewers`;
+  public createSecret(namespace: string, secret: SecretPostObject) {
+    const url = `api/namespaces/${namespace}/secrets`;
 
     return this.http
-      .post<VWABackendResponse>(url, { name: viewer })
-      .pipe(catchError(error => this.handleError(error)));
-  }
-
-  public createPVC(namespace: string, pvc: PVCPostObject) {
-    const url = `api/namespaces/${namespace}/pvcs`;
-
-    return this.http
-      .post<VWABackendResponse>(url, pvc)
+      .post<VWABackendResponse>(url, secret)
       .pipe(catchError(error => this.handleError(error)));
   }
 
   // DELETE
-  public deletePVC(namespace: string, pvc: string) {
-    const url = `api/namespaces/${namespace}/pvcs/${pvc}`;
+  public deletePVC(namespace: string, secret: string) {
+    const url = `api/namespaces/${namespace}/secrets/${secret}`;
 
     return this.http
       .delete<VWABackendResponse>(url)

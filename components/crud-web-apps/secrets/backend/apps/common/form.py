@@ -47,6 +47,6 @@ def secret_from_dict(body, namespace):
         """
     return client.V1Secret(
         metadata=client.V1ObjectMeta(name=body["name"], namespace=namespace),
-        type=body["type"],
-        data=body["data"]
+        type=body["secretType"],
+        data={item['key']: item['data'] for item in body["secretData"]}
     )
